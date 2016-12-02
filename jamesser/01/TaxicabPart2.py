@@ -29,6 +29,7 @@ def processInput(data):
 
 dataPath = sys.argv[1]
 
+
 data = ""
 with open(dataPath, 'r') as dataFile:
     data=dataFile.read().replace('\n', '')
