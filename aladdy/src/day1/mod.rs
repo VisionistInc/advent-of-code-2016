@@ -1,16 +1,5 @@
-use std::io;
 use std::collections::HashSet;
-
-fn main() {
-    let mut input = String::new();
-    match io::stdin().read_line(&mut input) {
-        Ok(_) => {
-            let v: Vec<&str> = input.trim().split(", ").collect();
-            println!("Ending is {} blocks away", solve(&v));
-        },
-        Err(error) => println!("error: {}", error),
-    }
-}
+use std::io::Result;
 
 const N: isize = 0;
 const E: isize = 1;
@@ -22,14 +11,20 @@ enum Direction {
     Left,
 }
 
-fn solve(v: &Vec<&str>) -> isize {
+pub fn solve<L: Iterator<Item=Result<String>>>(input: &mut L) -> () {
+    let line = input.next().unwrap().unwrap();
+    let v: Vec<&str> = line.split(", ").collect();
+    println!("Ending is {} blocks away", solve_line(&v));
+}
+
+fn solve_line(v: &Vec<&str>) -> isize {
     let mut x: isize = 0;
     let mut y: isize = 0;
     let mut dir = 0; // start facing north
     let mut visited = HashSet::new();
     let mut first = false;
     
-    for step in v {
+    for step in v.into_iter() {
         let (direction, mut distance) = get_travel(step);
         match direction {
             Direction::Right => {
