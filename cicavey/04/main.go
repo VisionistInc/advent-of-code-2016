@@ -57,6 +57,24 @@ func computeChecksum(s string) string {
 	return sum
 }
 
+func decrypt(name string, sectorID int) string {
+	sectorMod := byte(sectorID % 26)
+
+	ascii := []byte(name)
+
+	for i := range ascii {
+		if ascii[i] == 32 {
+			continue
+		}
+		ascii[i] += sectorMod
+		if ascii[i] > 122 {
+			ascii[i] -= 26
+		}
+	}
+
+	return string(ascii)
+}
+
 func main() {
 	total := 0
 	r, _ := os.Open("input")
@@ -68,12 +86,17 @@ func main() {
 
 		sectorID, _ := strconv.Atoi(lastToken[0])
 		checksum := lastToken[1][0 : len(lastToken[1])-1]
-		name := strings.Join(tokens[0:len(tokens)-1], "")
-		compCheckSum := computeChecksum(name)
+		name := strings.Join(tokens[0:len(tokens)-1], " ")
+		compCheckSum := computeChecksum(strings.Join(tokens[0:len(tokens)-1], ""))
 
 		if checksum == compCheckSum {
 			total += sectorID
+			name = decrypt(name, sectorID)
+			if strings.Index(name, "north") != -1 {
+				fmt.Println(name, sectorID)
+			}
 		}
 	}
+
 	fmt.Println(total)
 }
