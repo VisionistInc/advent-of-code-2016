@@ -11,6 +11,8 @@ pub fn solve<L: Iterator<Item=io::Result<String>>>(input: &mut L) -> () {
     let base = input.next().unwrap().unwrap();
 
     let mut password = String::new();
+    let mut next_pass = vec!['_', '_', '_', '_', '_', '_', '_', '_'];
+    let mut next_chars = 0;
 
     for i in (0..) {
         sh.input_str(base.deref());
@@ -20,12 +22,23 @@ pub fn solve<L: Iterator<Item=io::Result<String>>>(input: &mut L) -> () {
 
         if res.starts_with("00000") {
             println!("{}: {}", i, res);
-            password.push(res.chars().skip(5).next().unwrap());
-            if password.len() >= 8 {
-                break;
+            if password.len() < 8 {
+                password.push(res.chars().skip(5).next().unwrap());
+            }
+            let mut iter = res.chars().skip(5);
+            let loc_s = format!("{}", iter.next().unwrap());
+            let loc = usize::from_str_radix(loc_s.deref(), 16).unwrap();
+            if loc < 8 && next_pass[loc] == '_' {
+                next_pass[loc] = iter.next().unwrap();
+                println!("\t{:?}", next_pass);
+                next_chars += 1;
+                if next_chars >= 8 {
+                    break;
+                }
             }
         }
     }
 
     println!("Password is {}", password);
+    println!("Second password is {}", next_pass.drain(..).collect::<String>());
 }
