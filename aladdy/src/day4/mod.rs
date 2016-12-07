@@ -13,7 +13,8 @@ pub fn solve<L: Iterator<Item=io::Result<String>>>(input: &mut L) -> () {
         match r {
             Some(room) => {
                 if room.is_valid() {
-                    id_sum += room.sector
+                    id_sum += room.sector;
+                    println!("{}: {}", room.sector, room.decrypt_name());
                 }
             },
             None => (),
@@ -79,5 +80,20 @@ impl<'a> Room<'a> {
             .collect::<String>();
         
         self.checksum == checksum
+    }
+
+    fn decrypt_name(&self) -> String {
+        self.enc_name
+            .as_bytes()
+            .iter()
+            .map(|b| {
+                if *b == ('-' as u8) {
+                    ' '
+                } else {
+                    ((((*b as usize - 'a' as usize)
+                         + self.sector) % 26) + 'a' as usize) as u8 as char
+                } 
+            })
+            .collect::<String>()
     }
 }
