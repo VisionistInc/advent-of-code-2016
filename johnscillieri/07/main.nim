@@ -1,16 +1,6 @@
 import sequtils
 import strutils
 
-proc is_valid_ip( s: string ): bool =
-    result = false
-    for i in 0..<(len(s)-3):
-        if s[i] == s[i+3] and s[i+1] == s[i+2] and s[i] != s[i+1]:
-            if ( s.find('[', i) < s.find(']', i) and s.find('[', i) != -1 ) or ( s.find('[', i) == s.find(']', i) ):
-                result = true
-            else:
-                return false
-    return result
-
 proc is_within_from_offset( pattern: string, s: char, e: char, source: string, offset: int ): bool =
     ## Just check that pattern is between s & e in source from the given offset
     var offset = source.find( pattern, offset )
@@ -32,6 +22,17 @@ proc is_within( pattern: string, s: char, e: char, source: string ): bool =
     while offset != -1:
         if pattern.is_within_from_offset( s, e, source, offset ): return true
         offset = source.find( pattern, offset+len(pattern) )
+
+proc is_valid_ip( s: string ): bool =
+    result = false
+    for i in 0..<(len(s)-3):
+        if s[i] != s[i+3] or s[i+1] != s[i+2] or s[i] == s[i+1]: continue
+        # Found a match, now confirm it's not bad elsewhere
+        result = true
+        let pattern = s[i] & s[i+1] & s[i+2] & s[i+3]
+        if pattern.is_within( '[', ']', s ): return false
+        # Have to keep looping because there might be other bad patterns
+    return result
 
 proc supports_ssl( s: string ): bool =
     result = false
