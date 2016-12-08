@@ -14,7 +14,7 @@ pub fn solve<L: Iterator<Item=io::Result<String>>>(input: &mut L) -> () {
     let mut next_pass = vec!['_', '_', '_', '_', '_', '_', '_', '_'];
     let mut next_chars = 0;
 
-    for i in (0..) {
+    for i in 0.. {
         sh.input_str(base.deref());
         sh.input_str(format!("{}", i).deref());
         let res = sh.result_str();
