@@ -1,5 +1,5 @@
 const fs = require('fs');
-const input = fs.readFileSync('index.txt', 'utf-8');
+const input = fs.readFileSync('input.txt', 'utf-8');
 
 // const numPad = [
 //   ['1', '2', '3'],
