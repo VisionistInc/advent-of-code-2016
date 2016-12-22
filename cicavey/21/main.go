@@ -95,25 +95,33 @@ func (scr scrambler) String() string {
 	return string(scr.raw)
 }
 
-func main() {
+func merge(ins []rune, c rune) (result []string) {
+	for i := 0; i <= len(ins); i++ {
+		result = append(result, string(ins[:i])+string(c)+string(ins[i:]))
+	}
+	return
+}
 
-	scr := NewScrambler("abcdefgh")
-	/*
-		s.swapPos(4, 0)
-		s.swapLtr("d", "b")
-		s.rev(0, 4)
-		s.rot(1, true)
-		s.move(1, 4)
-		s.move(3, 0)
-		s.rotLtr("b")
-		s.rotLtr("d")
-		fmt.Println(s)
-	*/
+func permutations(input string) []string {
+	if len(input) == 1 {
+		return []string{input}
+	}
 
-	r, _ := os.Open("input")
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		s := strings.Split(scanner.Text(), " ")
+	runes := []rune(input)
+	subPermutations := permutations(string(runes[0 : len(input)-1]))
+
+	result := []string{}
+	for _, s := range subPermutations {
+		result = append(result, merge([]rune(s), runes[len(input)-1])...)
+	}
+
+	return result
+}
+
+func process(input string, ins []string) string {
+	scr := NewScrambler(input)
+	for _, i := range ins {
+		s := strings.Split(i, " ")
 		switch s[0] {
 		case "rotate":
 			if s[1] == "based" {
@@ -145,6 +153,27 @@ func main() {
 		}
 	}
 
-	fmt.Println(scr)
+	return scr.String()
+}
+
+func main() {
+
+	var ins []string
+	r, _ := os.Open("input")
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		ins = append(ins, scanner.Text())
+	}
+
+	fmt.Println(process("abcdefgh", ins))
+
+	target := "fbgdceah"
+	for _, p := range permutations("abcdefgh") {
+		result := process(p, ins)
+		if result == target {
+			fmt.Println(p, "->", target)
+			break
+		}
+	}
 
 }
