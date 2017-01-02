@@ -1,0 +1,322 @@
+cpy a d
+cpy 9 c
+cpy 282 b
+inc d
+dec b
+jnz b -2
+dec c
+jnz c -5
+cpy d a
+jnz 0 0
+cpy a b
+cpy 0 a
+cpy 2 c
+jnz b 2
+jnz 1 6
+dec b
+dec c
+jnz c -4
+inc a
+jnz 1 -7
+cpy 2 b
+jnz c 2
+jnz 1 4
+dec b
+dec c
+jnz 1 -4
+jnz 0 0
+out b
+jnz a -19
+jnz 1 -21
+
+Improve readability
+change to labels, remove nops (jnz 0 0), change 'jnz 1 *' to goto), change cpy to = and inc to ++, dec to --
+
+	d = a
+	c = 9
+x1	b = 282
+x2	d++
+	b--
+	jnz b x2
+	c--
+	jnz c x1
+x3	a = d
+x4	b = a
+	a = 0
+x5	c = 2
+x6	jnz b x7
+	goto x8
+x7	b--
+	c--
+	jnz c x6
+	a++
+	goto x5
+x8	b = 2
+x9	jnz c x0
+	goto xa
+x0	b--
+	c--
+	goto x9
+xa	out b
+	jnz a x4
+	goto x3
+	
+Looking closely at x2, we see a tight loop.  282 is put into b, and it is decremented until 0, all the while incrementing d.
+Basically, this is adding 282 to the contents of d.  So we can rewrite
+
+	d = a
+	c = 9
+x1	d = d + 282
+	c--
+	jnz c x1
+x3	a = d
+x4	b = a
+	a = 0
+x5	c = 2
+x6	jnz b x7
+	goto x8
+x7	b--
+	c--
+	jnz c x6
+	a++
+	goto x5
+x8	b = 2
+x9	jnz c x0
+	goto xa
+x0	b--
+	c--
+	goto x9
+xa	out b
+	jnz a x4
+	goto x3
+	
+This gives us another tight loop with x1.  282 is continually added to d until c is zero (9 times).
+So the resulting number is (282 x 9) 2538, allowing us to reduce the code to
+
+	d = a + 2538
+x3	a = d
+x4	b = a
+	a = 0
+x5	c = 2
+x6	jnz b x7
+	goto x8
+x7	b--
+	c--
+	jnz c x6
+	a++
+	goto x5
+x8	b = 2
+x9	jnz c x0
+	goto xa
+x0	b--
+	c--
+	goto x9
+xa	out b
+	jnz a x4
+	goto x3
+
+Looking at x3, we see that it is only ever jumped to from the end.  Essentially we have an infinate loop, so we'll rewrite
+
+	d = a + 2538
+	while True:
+		a = d
+x4		b = a
+		a = 0
+x5		c = 2
+x6		jnz b x7
+		goto x8
+x7		b--
+		c--
+		jnz c x6
+		a++
+		goto x5
+x8		b = 2
+x9		jnz c x0
+		goto xa
+x0		b--
+		c--
+		goto x9
+xa		out b
+		jnz a x4
+
+While it's possible that d could be 0 at x4, that is likely an unhandled overflow case.
+Therefore, the x4 loop appears to be a while a != 0 loop.  We'll rewrite:
+
+	d = a + 2538
+	while True:
+		a = d
+		while a != 0:
+			b = a
+			a = 0
+x5			c = 2
+x6			jnz b x7
+			goto x8
+x7			b--
+			c--
+			jnz c x6
+			a++
+			goto x5
+x8			b = 2
+x9			jnz c x0
+			goto xa
+x0			b--
+			c--
+			goto x9
+xa			out b
+
+If we look at x9 thru xa, we see that if c is 0, we jump to xa, otherwise we decrement b and c and reloop.
+Rewriting:
+
+	d = a + 2538
+	while True:
+		a = d
+		while a != 0:
+			b = a
+			a = 0
+x5			c = 2
+x6			jnz b x7
+			goto x8
+x7			b--
+			c--
+			jnz c x6
+			a++
+			goto x5
+x8			b = 2
+			while c != 0:
+				b--
+				c--
+			out b
+
+Looking at the x6 label, there is a loop on c that we'll rewrite
+Rewriting:
+
+	d = a + 2538
+	while True:
+		a = d
+		while a != 0:
+			b = a
+			a = 0
+x5			c = 2
+			while c != 0:
+				if b == 0:
+					goto x8
+				b--
+				c--
+			a++
+			goto x5
+x8			b = 2
+			while c != 0:
+				b--
+				c--
+			out b
+
+We can rewrite x5 as an infinite loop since there is a break (goto x8) to get out of the loops
+
+	d = a + 2538
+	while True:
+		a = d
+		while a != 0:
+			b = a
+			a = 0
+
+			while True:
+				c = 2
+				while c != 0:
+					if b == 0:
+						goto x8
+					b--
+					c--
+				a++
+
+x8			b = 2
+			while c != 0:
+				b--
+				c--
+			out b
+
+We can see that a, set to 0 before the inner infinite loop, gets incremented everytime c is 0,
+and this continues to happen as long as b has some value.  c is reset to 2 each time it hits zero.
+This looks like an integer divide by 2.  so we know that a = b / 2 (and since b is the same as a):
+
+	d = a + 2538
+	while True:
+		a = d
+		while a != 0:
+			b = a
+			a = a / 2
+
+			while True:
+				c = 2
+				while c != 0:
+					if b == 0:
+						goto x8
+					b--
+					c--
+
+x8			b = 2
+			while c != 0:
+				b--
+				c--
+			out b
+
+But to get rid of the loop, we need to know what c is at the end, since it's value is important in x8
+c can only be 2 or 1 (if it becomes 0, it wont enter the loop again and gets reset to 2).
+So if b is 0, or any even number, c will be 2.  If b is odd, c will be 1.  We can rewrite:
+
+	d = a + 2538
+	while True:
+		a = d
+		while a != 0:
+			b = a
+			a = a / 2
+
+			if b % 2 == 1:
+				c = 1
+			else:
+				c = 2
+
+			b = 2
+			while c != 0:
+				b--
+				c--
+			out b
+
+Since c can only be 1 or 2, we know that "out b" can only output 0 or 1.
+Essentially, if c is 2, b is 0, otherwise b is 1.  So we can reduce further:
+
+	d = a + 2538
+	while True:
+		a = d
+		while a != 0:
+			b = a
+
+			a = a / 2
+			b = b % 2
+
+			out b
+
+So we see how the 1/0 is generated, a is constantly halved, and the mod is the output.
+
+Since a can never be 0 (it will get reset to the input + 2538), we know the smallest value a will reach is 1
+We can figure out what numbers a needs to be in order to put out a 1 or 0
+We know a needs to alternate from even to odd in order for the mod result to change
+So we just need to figure out the next bigger number that will satisfy the integer division
+
+a		output
+1		1
+2		0
+5		1
+10		0
+21		1
+42		0
+85		1
+170		0
+341		1
+682		0
+1365	1
+2730	0
+
+We reached 2730, which is larger than out base val of 2538.
+And it results in a 0 being put out, which is what we need, since when we get down to 1, a 1 is outputted
+
+2730-2538 = 192, the smallest positive value we need to provide to get alternating 1,0
