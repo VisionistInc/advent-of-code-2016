@@ -6,4 +6,4 @@ Code should be organized as `username/N` where `N` is the 2 digit zero padded da
 
 
 ## Leaderboard
-![Leaderboard - Frozen](/leaderboard-fronze.png?raw=true)
+![Leaderboard - Frozen](/leaderboard-frozen.png?raw=true)
